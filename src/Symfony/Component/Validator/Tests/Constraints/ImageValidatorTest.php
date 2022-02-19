@@ -29,6 +29,7 @@ class ImageValidatorTest extends ConstraintValidatorTestCase
     protected $imagePortrait;
     protected $image4By3;
     protected $imageCorrupted;
+    protected $imageSvg;
 
     protected function createValidator()
     {
@@ -45,6 +46,7 @@ class ImageValidatorTest extends ConstraintValidatorTestCase
         $this->image4By3 = __DIR__.'/Fixtures/test_4by3.gif';
         $this->image16By9 = __DIR__.'/Fixtures/test_16by9.gif';
         $this->imageCorrupted = __DIR__.'/Fixtures/test_corrupted.gif';
+        $this->imageSvg = __DIR__.'/Fixtures/test_svg.svg';
     }
 
     public function testNullIsValid()
@@ -516,6 +518,34 @@ class ImageValidatorTest extends ConstraintValidatorTestCase
 
         $this->buildViolation('myMessage')
             ->setCode(Image::CORRUPTED_IMAGE_ERROR)
+            ->assertRaised();
+    }
+
+    public function testSvgSize()
+    {
+        $constraint = new Image([
+            'minWidth' => 1,
+            'maxWidth' => 2,
+            'minHeight' => 1,
+            'maxHeight' => 2,
+        ]);
+
+        $this->validator->validate($this->imageSvg, $constraint);
+
+        $this->assertNoViolation();
+    }
+
+    /**
+     * @dataProvider provideAllowSquareConstraints
+     */
+    public function testSquareNotAllowedOnSvg(Image $constraint)
+    {
+        $this->validator->validate($this->imageSvg, $constraint);
+
+        $this->buildViolation('myMessage')
+            ->setParameter('{{ width }}', 1)
+            ->setParameter('{{ height }}', 1)
+            ->setCode(Image::SQUARE_NOT_ALLOWED_ERROR)
             ->assertRaised();
     }
 
