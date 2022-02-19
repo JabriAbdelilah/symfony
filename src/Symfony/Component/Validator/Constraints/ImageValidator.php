@@ -53,7 +53,11 @@ class ImageValidator extends FileValidator
             return;
         }
 
-        $size = @getimagesize($value);
+        if ($this->isSvg($value)) {
+            $size = $this->getSvgSize($value);
+        } else {
+            $size = @getimagesize($value);
+        }
 
         if (empty($size) || (0 === $size[0]) || (0 === $size[1])) {
             $this->context->buildViolation($constraint->sizeNotDetectedMessage)
@@ -233,5 +237,30 @@ class ImageValidator extends FileValidator
 
             imagedestroy($resource);
         }
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    private function isSvg($value)
+    {
+        return 'image/svg+xml' === mime_content_type($value);
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return array
+     */
+    private function getSvgSize($value)
+    {
+        $xmlValue = simplexml_load_file($value);
+        $svgAttributes = $xmlValue->attributes();
+        $width = (string) $svgAttributes->width;
+        $height = (string) $svgAttributes->height;
+
+        return [$width, $height];
     }
 }
